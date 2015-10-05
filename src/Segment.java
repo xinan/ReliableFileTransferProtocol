@@ -52,12 +52,12 @@ public class Segment {
     return sequenceNumber == 0;
   }
 
-  public String getFileName() {
-    return fileName;
-  }
-
   public int getNumChunks() {
     return numChunks;
+  }
+
+  public String getFileName() {
+    return fileName;
   }
 
   public int getDataLength() {
@@ -66,10 +66,6 @@ public class Segment {
 
   public int getSequenceNumber() {
     return sequenceNumber;
-  }
-
-  public int getChecksum() {
-    return checksum;
   }
 
   public byte[] getData() {

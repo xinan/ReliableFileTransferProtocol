@@ -25,43 +25,46 @@ public class FileReceiver {
     byte[] buffer = new byte[Constants.segmentSize];
     DatagramPacket packet = new DatagramPacket(buffer, Constants.segmentSize);
     Segment segment;
-    while (true) {
-      socket.receive(packet);
-      segment = new Segment(packet);
-      if (segment.isMetadata() && segment.isValid()) {
-        numChunks = segment.getNumChunks();
-        senderAddr = packet.getSocketAddress();
-        file = new File(segment.getFileName());
-        file.getParentFile().mkdirs();
-        out = new RandomAccessFile(file, "rw");
-        sendAck(segment.getSequenceNumber());
-        break;
-      }
-    }
-
-    boolean[] received = new boolean[numChunks];
+    boolean[] received;
     int index;
-    while (numChunks > 0) {
-      socket.receive(packet);
-      segment = new Segment(packet);
-      if (segment.isValid()) {
-        if (!segment.isMetadata()) {
-          index = segment.getSequenceNumber() - 1;
-          out.seek(index * Constants.chunkSize);
-          out.write(segment.getData(), 0, segment.getDataLength());
-          if (!received[index]) {
-            received[index] = true;
-            numChunks--;
-          }
+
+    while (true) {
+      while (true) {
+        socket.receive(packet);
+        segment = new Segment(packet);
+        if (segment.isMetadata() && segment.isValid()) {
+          numChunks = segment.getNumChunks();
+          senderAddr = packet.getSocketAddress();
+          file = new File(segment.getFileName());
+          file.getParentFile().mkdirs();
+          out = new RandomAccessFile(file, "rw");
+          sendAck(segment.getSequenceNumber());
+          break;
         }
-        sendAck(segment.getSequenceNumber());
       }
+
+      received = new boolean[numChunks];
+      while (numChunks > 0) {
+        socket.receive(packet);
+        segment = new Segment(packet);
+        if (segment.isValid()) {
+          if (!segment.isMetadata()) {
+            index = segment.getSequenceNumber() - 1;
+            out.seek(index * Constants.chunkSize);
+            out.write(segment.getData(), 0, segment.getDataLength());
+            if (!received[index]) {
+              received[index] = true;
+              numChunks--;
+            }
+          }
+          sendAck(segment.getSequenceNumber());
+        }
+      }
+      for (int i = 0; i < 100; i++) {
+        sendAck(-1);
+      }
+      out.close();
     }
-    for (int i = 0; i < 100; i++) {
-      sendAck(-1);
-    }
-    out.close();
-    socket.close();
   }
 
   private static void sendAck(int sequenceNumber) throws Exception {
