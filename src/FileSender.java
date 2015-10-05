@@ -13,9 +13,9 @@ import java.util.Arrays;
 public class FileSender {
 
   public static void main(String[] args) throws Exception {
-    Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
     StopWatch sw = new StopWatch();
     sw.start();
+    Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
 
     String host = args[0];
     int port = Integer.parseInt(args[1]);
@@ -26,10 +26,9 @@ public class FileSender {
     DatagramSocket socket = new DatagramSocket();
     DatagramPacket packet;
 
-    File file = new File(src);
-    RandomAccessFile in = new RandomAccessFile(file, "r");
+    RandomAccessFile in = new RandomAccessFile(new File(src), "r");
 
-    int numChunks = (int) Math.ceil(1F * file.length() / Constants.chunkSize);
+    int numChunks = (int) Math.ceil(1F * in.length() / Constants.chunkSize);
 
     boolean[] received = new boolean[numChunks + 1];
     ResponseHandlingThread responseHandlingThread = (new ResponseHandlingThread(received, numChunks, socket));

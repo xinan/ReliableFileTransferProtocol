@@ -20,10 +20,8 @@ public class FileReceiver {
 
     File file;
     RandomAccessFile out;
-    String fileName;
     int numChunks;
 
-    byte[] data;
     byte[] buffer = new byte[Constants.segmentSize];
     DatagramPacket packet = new DatagramPacket(buffer, Constants.segmentSize);
     Segment segment;
@@ -31,10 +29,9 @@ public class FileReceiver {
       socket.receive(packet);
       segment = new Segment(packet);
       if (segment.isMetadata() && segment.isValid()) {
-        fileName = segment.getFileName();
         numChunks = segment.getNumChunks();
         senderAddr = packet.getSocketAddress();
-        file = new File(fileName);
+        file = new File(segment.getFileName());
         file.getParentFile().mkdirs();
         out = new RandomAccessFile(file, "rw");
         sendAck(segment.getSequenceNumber());
@@ -43,22 +40,18 @@ public class FileReceiver {
     }
 
     boolean[] received = new boolean[numChunks];
-    int index, duplicated = 0;
+    int index;
     while (numChunks > 0) {
       socket.receive(packet);
       segment = new Segment(packet);
       if (segment.isValid()) {
         if (!segment.isMetadata()) {
-//          System.out.println(segment.getSequenceNumber() + " get!");
-          data = segment.getData();
           index = segment.getSequenceNumber() - 1;
           out.seek(index * Constants.chunkSize);
-          out.write(data, 0, segment.getDataLength());
+          out.write(segment.getData(), 0, segment.getDataLength());
           if (!received[index]) {
             received[index] = true;
             numChunks--;
-          } else {
-            duplicated++;
           }
         }
         sendAck(segment.getSequenceNumber());
@@ -67,7 +60,6 @@ public class FileReceiver {
     for (int i = 0; i < 100; i++) {
       sendAck(-1);
     }
-    System.out.println(duplicated + " duplicated!");
     out.close();
     socket.close();
   }
@@ -76,6 +68,5 @@ public class FileReceiver {
     Segment segment = new Segment(sequenceNumber, new byte[0]);
     DatagramPacket packet = new DatagramPacket(segment.getBytes(), segment.length(), senderAddr);
     socket.send(packet);
-//    System.out.println(segment.getSequenceNumber() + " ack sent!");
   }
 }

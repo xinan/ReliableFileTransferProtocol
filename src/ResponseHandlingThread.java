@@ -15,10 +15,10 @@ public class ResponseHandlingThread extends Thread {
     this.socket = socket;
   }
 
-  public void run(){
+  public void run() {
     byte[] buffer = new byte[Constants.headerSize];
     Segment segment;
-    DatagramPacket packet = new DatagramPacket(buffer, 8);
+    DatagramPacket packet = new DatagramPacket(buffer, Constants.headerSize);
     while (numChunks >= 0) {
       try {
         socket.receive(packet);
@@ -27,19 +27,12 @@ public class ResponseHandlingThread extends Thread {
       }
       segment = new Segment(packet);
       if (segment.isValid() && segment.getSequenceNumber() == -1) {
-        System.out.println("Finally!");
-        int sum = 0;
         for (int i = 0; i < received.length; i++) {
-          if (!received[i]) {
-            sum++;
-          }
           received[i] = true;
         }
-        System.out.println(sum + " acks missing");
         return;
       }
       if (segment.isValid() && !received[segment.getSequenceNumber()]) {
-//        System.out.println(segment.getSequenceNumber());
         received[segment.getSequenceNumber()] = true;
         numChunks--;
       }
