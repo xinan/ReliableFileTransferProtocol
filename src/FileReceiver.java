@@ -50,9 +50,9 @@ public class FileReceiver {
         if (segment.isValid()) {
           if (!segment.isMetadata()) {
             index = segment.getSequenceNumber() - 1;
-            out.seek(index * Constants.chunkSize);
-            out.write(segment.getData(), 0, segment.getDataLength());
             if (!received[index]) {
+              out.seek(index * Constants.chunkSize);
+              out.write(segment.getData(), 0, segment.getDataLength());
               received[index] = true;
               numChunks--;
             }
