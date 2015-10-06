@@ -36,7 +36,7 @@ public class FileReceiver {
           numChunks = segment.getNumChunks();
           senderAddr = packet.getSocketAddress();
           file = new File(segment.getFileName());
-          file.getParentFile().mkdirs();
+          file.getAbsoluteFile().getParentFile().mkdirs();
           out = new RandomAccessFile(file, "rw");
           sendAck(segment.getSequenceNumber());
           break;
