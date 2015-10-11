@@ -5,7 +5,6 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 /**
  * Created by Xinan on 4/10/15.
@@ -38,10 +37,9 @@ public class FileSender {
     boolean completed = false;
     Segment segment;
     byte[] buffer = new byte[Constants.chunkSize];
-    int bytesRead;
 
     while (!received[0]) {
-      segment = getMetadata(numChunks, dest);
+      segment = getMetadata(in.length(), dest);
       packet = new DatagramPacket(segment.getBytes(), segment.length(), receiverAddr);
       socket.send(packet);
     }
@@ -54,8 +52,8 @@ public class FileSender {
         }
         completed = false;
         in.seek((i - 1) * Constants.chunkSize);
-        bytesRead = in.read(buffer, 0, Constants.chunkSize);
-        segment = new Segment(i, Arrays.copyOfRange(buffer, 0, bytesRead));
+        in.read(buffer, 0, Constants.chunkSize);
+        segment = new Segment(i, buffer);
         packet = new DatagramPacket(segment.getBytes(), segment.length(), receiverAddr);
         socket.send(packet);
       }
@@ -67,9 +65,10 @@ public class FileSender {
     System.out.println(sw.getTime());
   }
 
-  public static Segment getMetadata(int numChunks, String fileName) {
-    ByteBuffer buffer = ByteBuffer.allocate(fileName.length() + 4);
-    buffer.putInt(numChunks);
+  public static Segment getMetadata(long fileLength, String fileName) {
+    ByteBuffer buffer = ByteBuffer.allocate(Constants.chunkSize);
+    buffer.putLong(fileLength);
+    buffer.putInt(fileName.length());
     buffer.put(fileName.getBytes());
     return new Segment(0, buffer.array());
   }

@@ -21,6 +21,7 @@ public class FileReceiver {
     File file;
     RandomAccessFile out;
     int numChunks;
+    long fileLength;
 
     byte[] buffer = new byte[Constants.segmentSize];
     DatagramPacket packet = new DatagramPacket(buffer, Constants.segmentSize);
@@ -31,9 +32,10 @@ public class FileReceiver {
     while (true) {
       while (true) {
         socket.receive(packet);
-        segment = new Segment(packet);
+        segment = new Segment(packet, true);
         if (segment.isMetadata() && segment.isValid()) {
-          numChunks = segment.getNumChunks();
+          fileLength = segment.getFileLength();
+          numChunks = (int) Math.ceil(1F * fileLength / Constants.chunkSize);
           senderAddr = packet.getSocketAddress();
           file = new File(segment.getFileName());
           file.getAbsoluteFile().getParentFile().mkdirs();
@@ -60,6 +62,7 @@ public class FileReceiver {
           sendAck(segment.getSequenceNumber());
         }
       }
+      out.setLength(fileLength);
       for (int i = 0; i < 100; i++) {
         sendAck(-1);
       }

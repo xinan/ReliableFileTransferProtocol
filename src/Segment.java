@@ -8,40 +8,39 @@ import java.util.Arrays;
 public class Segment {
   private int checksum;
   private int sequenceNumber;
-  private short dataLength;
   private byte[] data;
 
-  private int numChunks = -1;
+  private long fileLength = -1;
   private String fileName = null;
 
   public Segment(int sequenceNumber, byte[] data) {
     this.sequenceNumber = sequenceNumber;
     this.data = data;
-    this.dataLength = (short) data.length;
     checksum = -sequenceNumber;
-    checksum -= dataLength;
     for (byte b : data) {
       checksum -= b;
     }
   }
 
-  public Segment(DatagramPacket packet) {
+  public Segment(DatagramPacket packet, boolean expectMeta) {
     byte[] data = packet.getData();
     ByteBuffer buffer = ByteBuffer.wrap(data);
     checksum = buffer.getInt();
     sequenceNumber = buffer.getInt();
-    dataLength = buffer.getShort();
-    this.data = Arrays.copyOfRange(buffer.array(), Constants.headerSize, Constants.headerSize + dataLength);
-    if (sequenceNumber == 0 && isValid() && dataLength > 0) {
-      numChunks = buffer.getInt();
-      fileName = new String(this.data, 4, this.data.length - 4);
+    this.data = Arrays.copyOfRange(buffer.array(), Constants.headerSize, data.length);
+    if (expectMeta && sequenceNumber == 0 && isValid()) {
+      fileLength = buffer.getLong();
+      fileName = new String(this.data, 12, buffer.getInt());
     }
+  }
+
+  public Segment(DatagramPacket packet) {
+    this(packet, false);
   }
 
   public boolean isValid() {
     int sum = checksum;
     sum += sequenceNumber;
-    sum += dataLength;
     for (byte b : data) {
       sum += b;
     }
@@ -52,8 +51,8 @@ public class Segment {
     return sequenceNumber == 0;
   }
 
-  public int getNumChunks() {
-    return numChunks;
+  public long getFileLength() {
+    return fileLength;
   }
 
   public String getFileName() {
@@ -61,7 +60,7 @@ public class Segment {
   }
 
   public int getDataLength() {
-    return dataLength;
+    return data.length;
   }
 
   public int getSequenceNumber() {
@@ -76,8 +75,7 @@ public class Segment {
     ByteBuffer buffer = ByteBuffer.allocate(data.length + Constants.headerSize);
     buffer.putInt(checksum);
     buffer.putInt(sequenceNumber);
-    buffer.putShort(dataLength);
-    buffer.put(data, 0, dataLength);
+    buffer.put(data, 0, data.length);
     return buffer.array();
   }
 
