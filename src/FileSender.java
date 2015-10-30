@@ -12,8 +12,6 @@ import java.nio.ByteBuffer;
 public class FileSender {
 
   public static void main(String[] args) throws Exception {
-    StopWatch sw = new StopWatch();
-    sw.start();
     Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
 
     String host = args[0];
@@ -60,9 +58,6 @@ public class FileSender {
     }
     in.close();
     socket.close();
-
-    sw.stop();
-    System.out.println(sw.getTime());
   }
 
   public static Segment getMetadata(long fileLength, String fileName) {

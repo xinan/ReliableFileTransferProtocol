@@ -63,7 +63,7 @@ public class FileReceiver {
         }
       }
       out.setLength(fileLength);
-      for (int i = 0; i < 100; i++) {
+      for (int i = 0; i < 1000; i++) {
         sendAck(-1);
       }
       out.close();
